@@ -1,5 +1,5 @@
 import React from "react"
-import { graphql, Link } from "gatsby"
+import { graphql, Link, useStaticQuery } from "gatsby"
 import styled from "styled-components"
 
 import Layout from "../components/layout"
@@ -10,25 +10,40 @@ const BlogLink = styled(Link)`
 `
 
 const BlogTitle = styled.h3`
-  margin-bottom:20;
-  color:blue;
+  margin-bottom: 20;
+  color: blue;
 `
 
-export default ({ data }) => {
+const BlogPage = () => {
+  const data = useStaticQuery(graphql`
+    query {
+      allContentfulBlogPost(sort: { fields: publishedDate, order: DESC }) {
+        totalCount
+        edges {
+          node {
+            id
+            title
+            slug
+            publishedDate(formatString: "MMMM Do, YYYY")
+          }
+        }
+      }
+    }
+  `)
+  const posts = data.allContentfulBlogPost;
   return (
     <Layout>
       <SEO title="Home" />
       <div>
         <h1>Posts</h1>
-        <h4>Total Posts - {data.allMarkdownRemark.totalCount}</h4>
-        {data.allMarkdownRemark.edges.map(({ node }) => (
-          <div key={node.id}>
-            <BlogLink to={node.fields.slug}>
+        <h4>Total Posts - {posts.totalCount}</h4>
+        {posts.edges.map(edge => (
+          <div key={edge.node.id}>
+            <BlogLink to={edge.node.slug}>
               <BlogTitle>
-                {node.frontmatter.title} - {node.frontmatter.date}
+                {edge.node.title} - {edge.node.publishedDate}
               </BlogTitle>
             </BlogLink>
-            <p>{node.excerpt}</p>
           </div>
         ))}
       </div>
@@ -36,25 +51,4 @@ export default ({ data }) => {
   )
 }
 
-export const query = graphql`
-  query {
-    allMarkdownRemark(sort: { fields: [frontmatter___date], order: DESC }) {
-      totalCount
-      edges {
-        node {
-          id
-          frontmatter {
-            date
-            description
-            title
-          }
-          fields {
-            slug
-          }
-          html
-          excerpt
-        }
-      }
-    }
-  }
-`
+export default BlogPage
